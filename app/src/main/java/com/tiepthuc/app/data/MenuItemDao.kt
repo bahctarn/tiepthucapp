@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MenuItemDao {
 
-    @Query("SELECT * FROM menu_items ORDER BY usageCount DESC, lastUsedAt DESC LIMIT 30")
-    fun observeSuggestions(): Flow<List<MenuItemEntity>>
+    @Query("SELECT * FROM menu_items ORDER BY name ASC")
+    fun observeAll(): Flow<List<MenuItemEntity>>
 
-    @Query("SELECT * FROM menu_items WHERE name = :name LIMIT 1")
+    @Query("SELECT * FROM menu_items WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): MenuItemEntity?
 
     @Insert
