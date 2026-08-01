@@ -1,7 +1,5 @@
 package com.tiepthuc.app.ui.screens
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -29,7 +27,7 @@ fun TableDetailScreen(
     onBack: () -> Unit
 ) {
     val items by viewModel.items.collectAsState()
-    val suggestions by viewModel.suggestions.collectAsState()
+    val menuItems by viewModel.menuItems.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var editTarget by remember { mutableStateOf<OrderItemEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<OrderItemEntity?>(null) }
@@ -84,8 +82,7 @@ fun TableDetailScreen(
             initialName = "",
             initialQty = 1,
             initialNote = "",
-            suggestions = suggestions,
-            onDeleteSuggestion = { viewModel.deleteSuggestion(it) },
+            menuItems = menuItems,
             onDismiss = { showAddDialog = false },
             onConfirm = { name, qty, note ->
                 viewModel.addItem(name, qty, note)
@@ -100,8 +97,7 @@ fun TableDetailScreen(
             initialName = item.itemName,
             initialQty = item.quantity,
             initialNote = item.note ?: "",
-            suggestions = emptyList(),
-            onDeleteSuggestion = {},
+            menuItems = menuItems,
             onDismiss = { editTarget = null },
             onConfirm = { name, qty, note ->
                 viewModel.updateItem(item, name, qty, note)
@@ -173,8 +169,7 @@ private fun ItemDialog(
     initialName: String,
     initialQty: Int,
     initialNote: String,
-    suggestions: List<MenuItemEntity>,
-    onDeleteSuggestion: (MenuItemEntity) -> Unit,
+    menuItems: List<MenuItemEntity>,
     onDismiss: () -> Unit,
     onConfirm: (String, Int, String) -> Unit
 ) {
@@ -182,11 +177,11 @@ private fun ItemDialog(
     var qty by remember { mutableStateOf(initialQty) }
     var note by remember { mutableStateOf(initialNote) }
 
-    val filteredSuggestions = remember(name, suggestions) {
+    val filteredMenu = remember(name, menuItems) {
         if (name.isBlank()) {
-            suggestions
+            menuItems
         } else {
-            suggestions.filter { it.name.contains(name, ignoreCase = true) }
+            menuItems.filter { it.name.contains(name, ignoreCase = true) }
         }
     }
 
@@ -199,38 +194,43 @@ private fun ItemDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Tên món") },
-                    placeholder = { Text("Gõ để tìm hoặc nhập món mới") },
+                    placeholder = { Text("Gõ để tìm trong menu") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                if (suggestions.isNotEmpty()) {
+                if (menuItems.isNotEmpty()) {
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        if (name.isBlank()) "Gợi ý (giữ để xoá):" else "Khớp với \"$name\" (giữ để xoá):",
+                        if (name.isBlank()) "Chọn từ menu:" else "Khớp với \"$name\":",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(6.dp))
-                    if (filteredSuggestions.isEmpty()) {
+                    if (filteredMenu.isEmpty()) {
                         Text(
-                            "Không có món nào khớp — đây sẽ là món mới.",
+                            "Không có món nào trong menu khớp với từ khoá này.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     } else {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(filteredSuggestions, key = { it.id }) { suggestion ->
-                                QuickPickChip(
-                                    text = suggestion.name,
-                                    onClick = { name = suggestion.name },
-                                    onLongClick = { onDeleteSuggestion(suggestion) }
+                            items(filteredMenu, key = { it.id }) { menuItem ->
+                                AssistChip(
+                                    onClick = { name = menuItem.name },
+                                    label = { Text(menuItem.name) }
                                 )
                             }
                         }
                     }
                     Spacer(Modifier.height(14.dp))
+                } else {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Menu đang trống. Bạn có thể vào tab \"Menu\" để thêm món, hoặc cứ gõ tên món trực tiếp ở đây.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(10.dp))
                 }
 
-                Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Số lượng:", modifier = Modifier.weight(1f))
                     IconButton(onClick = { if (qty > 1) qty-- }) {
@@ -258,25 +258,4 @@ private fun ItemDialog(
             TextButton(onClick = onDismiss) { Text("Huỷ") }
         }
     )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun QuickPickChip(
-    text: String,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
-) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        tonalElevation = 2.dp,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
-    ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
 }
