@@ -182,36 +182,55 @@ private fun ItemDialog(
     var qty by remember { mutableStateOf(initialQty) }
     var note by remember { mutableStateOf(initialNote) }
 
+    val filteredSuggestions = remember(name, suggestions) {
+        if (name.isBlank()) {
+            suggestions
+        } else {
+            suggestions.filter { it.name.contains(name, ignoreCase = true) }
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Tên món") },
+                    placeholder = { Text("Gõ để tìm hoặc nhập món mới") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 if (suggestions.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
                     Text(
-                        "Chọn nhanh (giữ để xoá):",
+                        if (name.isBlank()) "Gợi ý (giữ để xoá):" else "Khớp với \"$name\" (giữ để xoá):",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(6.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(suggestions, key = { it.id }) { suggestion ->
-                            QuickPickChip(
-                                text = suggestion.name,
-                                onClick = { name = suggestion.name },
-                                onLongClick = { onDeleteSuggestion(suggestion) }
-                            )
+                    if (filteredSuggestions.isEmpty()) {
+                        Text(
+                            "Không có món nào khớp — đây sẽ là món mới.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    } else {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(filteredSuggestions, key = { it.id }) { suggestion ->
+                                QuickPickChip(
+                                    text = suggestion.name,
+                                    onClick = { name = suggestion.name },
+                                    onLongClick = { onDeleteSuggestion(suggestion) }
+                                )
+                            }
                         }
                     }
                     Spacer(Modifier.height(14.dp))
                 }
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Tên món") },
-                    singleLine = true
-                )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Số lượng:", modifier = Modifier.weight(1f))
                     IconButton(onClick = { if (qty > 1) qty-- }) {
