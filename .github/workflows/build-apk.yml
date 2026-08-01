@@ -1,0 +1,62 @@
+name: Build APK
+
+# Chạy tự động mỗi khi push code lên nhánh main, và cho phép bấm nút "Run workflow"
+# thủ công trong tab Actions trên GitHub bất cứ lúc nào.
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      # true nếu bạn đã thêm secret KEYSTORE_BASE64 trong Settings > Secrets and variables > Actions
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: "8.7"
+
+      - name: Giải mã keystore (nếu có secret)
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release-key.jks
+
+      - name: Build APK debug
+        run: gradle assembleDebug --stacktrace
+
+      - name: Build APK release
+        run: gradle assembleRelease --stacktrace
+        env:
+          KEYSTORE_PATH: ${{ env.HAS_KEYSTORE == 'true' && 'app/release-key.jks' || '' }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Tải lên APK debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Tải lên APK release
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/*.apk
