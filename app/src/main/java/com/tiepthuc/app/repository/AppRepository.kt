@@ -77,31 +77,33 @@ class AppRepository(private val db: AppDatabase) {
 
     suspend fun getItemById(id: Long): OrderItemEntity? = itemDao.getById(id)
 
-    // ---- Gợi ý nhanh (menu items tự học) ----
-    fun observeSuggestions(): Flow<List<MenuItemEntity>> = menuItemDao.observeSuggestions()
+    // ---- Menu (danh sách món cố định do người dùng tự quản lý) ----
+    fun observeMenuItems(): Flow<List<MenuItemEntity>> = menuItemDao.observeAll()
 
-    /**
-     * Gọi mỗi khi người dùng thêm một món (dù gõ tự do hay chọn từ gợi ý).
-     * Nếu tên món đã tồn tại trong danh sách gợi ý -> tăng usageCount để nó nổi lên trên.
-     * Nếu chưa có -> tự động lưu làm gợi ý mới cho lần sau.
-     */
-    suspend fun recordItemUsed(name: String) {
-        val trimmed = name.trim()
-        if (trimmed.isBlank()) return
-        val existing = menuItemDao.findByName(trimmed)
-        if (existing != null) {
-            menuItemDao.update(
-                existing.copy(
-                    usageCount = existing.usageCount + 1,
-                    lastUsedAt = System.currentTimeMillis()
-                )
-            )
-        } else {
-            menuItemDao.insert(MenuItemEntity(name = trimmed))
-        }
+    sealed class AddMenuItemResult {
+        data class Success(val id: Long) : AddMenuItemResult()
+        object DuplicateName : AddMenuItemResult()
+        object BlankName : AddMenuItemResult()
     }
 
-    suspend fun deleteSuggestion(item: MenuItemEntity) {
+    suspend fun addMenuItem(name: String): AddMenuItemResult {
+        val trimmed = name.trim()
+        if (trimmed.isBlank()) return AddMenuItemResult.BlankName
+        if (menuItemDao.findByName(trimmed) != null) return AddMenuItemResult.DuplicateName
+        val id = menuItemDao.insert(MenuItemEntity(name = trimmed))
+        return AddMenuItemResult.Success(id)
+    }
+
+    suspend fun renameMenuItem(item: MenuItemEntity, newName: String): AddMenuItemResult {
+        val trimmed = newName.trim()
+        if (trimmed.isBlank()) return AddMenuItemResult.BlankName
+        val existing = menuItemDao.findByName(trimmed)
+        if (existing != null && existing.id != item.id) return AddMenuItemResult.DuplicateName
+        menuItemDao.update(item.copy(name = trimmed))
+        return AddMenuItemResult.Success(item.id)
+    }
+
+    suspend fun deleteMenuItem(item: MenuItemEntity) {
         menuItemDao.delete(item)
     }
 
