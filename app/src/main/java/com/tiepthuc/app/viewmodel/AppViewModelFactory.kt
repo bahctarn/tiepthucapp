@@ -12,6 +12,7 @@ class AppViewModelFactory(private val repository: AppRepository) : ViewModelProv
             TablesViewModel::class.java -> TablesViewModel(repository) as T
             HistoryViewModel::class.java -> HistoryViewModel(repository) as T
             SettingsViewModel::class.java -> SettingsViewModel(repository) as T
+            MenuViewModel::class.java -> MenuViewModel(repository) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }
     }
