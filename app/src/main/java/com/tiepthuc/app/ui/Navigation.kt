@@ -3,6 +3,7 @@ package com.tiepthuc.app.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TableBar
@@ -27,11 +28,12 @@ import java.net.URLEncoder
 private sealed class Dest(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Pending : Dest("pending", "Món chờ", Icons.Filled.RestaurantMenu)
     object Tables : Dest("tables", "Bàn", Icons.Filled.TableBar)
+    object Menu : Dest("menu", "Menu", Icons.Filled.MenuBook)
     object History : Dest("history", "Lịch sử", Icons.Filled.History)
     object Settings : Dest("settings", "Cài đặt", Icons.Filled.Settings)
 }
 
-private val bottomDestinations = listOf(Dest.Pending, Dest.Tables, Dest.History, Dest.Settings)
+private val bottomDestinations = listOf(Dest.Pending, Dest.Tables, Dest.Menu, Dest.History, Dest.Settings)
 
 @Composable
 fun TiepThucNavHost(repository: AppRepository) {
@@ -88,6 +90,10 @@ fun TiepThucNavHost(repository: AppRepository) {
                 val tableName = URLDecoder.decode(tableNameRaw, "UTF-8")
                 val vm: TableDetailViewModel = viewModel(factory = factory.tableDetailFactory(tableId))
                 TableDetailScreen(tableName, vm) { navController.popBackStack() }
+            }
+            composable(Dest.Menu.route) {
+                val vm: MenuViewModel = viewModel(factory = factory)
+                MenuScreen(vm)
             }
             composable(Dest.History.route) {
                 val vm: HistoryViewModel = viewModel(factory = factory)
