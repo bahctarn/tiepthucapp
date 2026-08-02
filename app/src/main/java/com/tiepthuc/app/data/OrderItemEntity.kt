@@ -14,6 +14,10 @@ object ItemStatus {
  * Mỗi món ăn/thức uống được gọi cho một bàn.
  * (Gộp khái niệm "Order" vào trực tiếp OrderItem để đơn giản hoá thao tác thêm món nhanh
  * trong nhà hàng - mỗi dòng gắn với tableId và có mốc thời gian tạo riêng.)
+ *
+ * archived: đánh dấu món thuộc một phiên bàn đã "Kết thúc". Món đã mang ra (SERVED) vẫn
+ * được giữ nguyên trong database (để Lịch sử luôn đầy đủ) nhưng bị đánh dấu archived = true
+ * để không còn hiển thị trong chi tiết bàn hay tính vào trạng thái bàn hiện tại.
  */
 @Entity(
     tableName = "order_items",
@@ -36,5 +40,6 @@ data class OrderItemEntity(
     val note: String? = null,
     val status: String = ItemStatus.PENDING,
     val createdAt: Long = System.currentTimeMillis(),
-    val servedAt: Long? = null
+    val servedAt: Long? = null,
+    val archived: Boolean = false
 )
