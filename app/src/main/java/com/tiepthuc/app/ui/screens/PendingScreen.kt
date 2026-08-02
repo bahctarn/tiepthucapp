@@ -1,6 +1,6 @@
 package com.tiepthuc.app.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,9 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.tiepthuc.app.data.ItemStatus
 import com.tiepthuc.app.data.OrderItemEntity
 import com.tiepthuc.app.ui.theme.AmberPending
 import com.tiepthuc.app.viewmodel.PendingRow
@@ -21,6 +21,18 @@ import com.tiepthuc.app.viewmodel.PendingViewModel
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
+
+// Ngưỡng cảnh báo thời gian chờ món.
+private const val WARNING_MINUTES = 10
+private const val DANGER_MINUTES = 20
+
+// Chu kỳ làm mới đồng hồ để màu sắc/số phút chờ tự cập nhật khi màn hình đang mở.
+private const val CLOCK_TICK_MS = 15_000L
+
+private val WarningContainer = Color(0xFFFFF3CD)
+private val WarningBorder = Color(0xFFF57C00)
+private val DangerContainer = Color(0xFFFDE2E1)
+private val DangerBorder = Color(0xFFD32F2F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +49,16 @@ fun PendingScreen(viewModel: PendingViewModel) {
         history.count {
             val c = Calendar.getInstance().apply { timeInMillis = it.servedAt ?: 0L }
             c.get(Calendar.DAY_OF_YEAR) == todayDay && c.get(Calendar.YEAR) == todayYear
+        }
+    }
+
+    // Đồng hồ nội bộ, tự cập nhật định kỳ để thời gian chờ và màu cảnh báo
+    // của từng món luôn đúng thực tế trong lúc màn hình đang mở, không cần thao tác gì.
+    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(CLOCK_TICK_MS)
+            nowMillis = System.currentTimeMillis()
         }
     }
 
@@ -77,6 +99,7 @@ fun PendingScreen(viewModel: PendingViewModel) {
                     items(rows, key = { it.item.id }) { row ->
                         PendingItemCard(
                             row = row,
+                            nowMillis = nowMillis,
                             onServed = {
                                 viewModel.markServed(row.item)
                                 undoTarget = row.item
@@ -132,9 +155,33 @@ private fun DashboardCard(label: String, value: String, modifier: Modifier = Mod
 }
 
 @Composable
-private fun PendingItemCard(row: PendingRow, onServed: () -> Unit) {
+private fun PendingItemCard(row: PendingRow, nowMillis: Long, onServed: () -> Unit) {
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
-    Card {
+
+    val waitMinutes = ((nowMillis - row.item.createdAt) / 60_000L).coerceAtLeast(0)
+    val isDanger = waitMinutes >= DANGER_MINUTES
+    val isWarning = !isDanger && waitMinutes >= WARNING_MINUTES
+
+    val containerColor = when {
+        isDanger -> DangerContainer
+        isWarning -> WarningContainer
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val borderColor = when {
+        isDanger -> DangerBorder
+        isWarning -> WarningBorder
+        else -> null
+    }
+    val waitTextColor = when {
+        isDanger -> DangerBorder
+        isWarning -> WarningBorder
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = borderColor?.let { BorderStroke(1.5.dp, it) }
+    ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.RestaurantMenu, contentDescription = null, tint = AmberPending)
@@ -153,6 +200,13 @@ private fun PendingItemCard(row: PendingRow, onServed: () -> Unit) {
                 Spacer(Modifier.height(4.dp))
                 Text("Ghi chú: ${row.item.note}", style = MaterialTheme.typography.bodyMedium)
             }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Đã chờ $waitMinutes phút",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (isWarning || isDanger) FontWeight.Bold else FontWeight.Normal,
+                color = waitTextColor
+            )
             Spacer(Modifier.height(12.dp))
             Button(
                 onClick = onServed,
