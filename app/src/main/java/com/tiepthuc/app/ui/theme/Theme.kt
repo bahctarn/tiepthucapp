@@ -14,7 +14,8 @@ private val LightColors = lightColorScheme(
     primary = OrangePrimary,
     onPrimary = Color.White,
     primaryContainer = OrangePrimaryDark,
-    background = BackgroundLight,
+    onPrimaryContainer = Color.White,
+    background = Color.Transparent,
     surface = SurfaceLight,
     error = ErrorRed
 )
