@@ -20,7 +20,7 @@ interface TableDao {
     @Delete
     suspend fun delete(table: TableEntity)
 
-    @Query("SELECT COUNT(*) FROM order_items WHERE tableId = :tableId AND status = 'PENDING'")
+    @Query("SELECT COUNT(*) FROM order_items WHERE tableId = :tableId AND status = 'PENDING' AND archived = 0")
     suspend fun countPendingItemsForTable(tableId: Long): Int
 
     @Query("SELECT * FROM tables")
