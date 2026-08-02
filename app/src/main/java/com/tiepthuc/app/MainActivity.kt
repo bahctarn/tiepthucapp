@@ -4,9 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.tiepthuc.app.R
 import com.tiepthuc.app.data.AppDatabase
 import com.tiepthuc.app.repository.AppRepository
 import com.tiepthuc.app.ui.TiepThucNavHost
@@ -28,7 +36,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             TiepThucTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    TiepThucNavHost(repository)
+                                        Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.watermark_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .alpha(0.15f),
+                            contentScale = ContentScale.Fit,
+                            alignment = Alignment.Center
+                        )
+                                                                    TiepThucNavHost(repository)
+                    }
                 }
             }
         }
