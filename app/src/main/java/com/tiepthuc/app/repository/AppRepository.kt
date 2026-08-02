@@ -77,6 +77,15 @@ class AppRepository(private val db: AppDatabase) {
 
     suspend fun getItemById(id: Long): OrderItemEntity? = itemDao.getById(id)
 
+    /**
+     * Kết thúc phiên bàn: món chưa mang ra bị xoá hẳn (chưa có giá trị lịch sử),
+     * món đã mang ra được giữ nguyên cho Lịch sử nhưng đánh dấu archived để bàn
+     * trở lại trạng thái TRỐNG và sẵn sàng cho khách mới.
+     */
+    suspend fun endTable(tableId: Long) {
+        itemDao.endTableSession(tableId)
+    }
+
     // ---- Menu (danh sách món cố định do người dùng tự quản lý) ----
     fun observeMenuItems(): Flow<List<MenuItemEntity>> = menuItemDao.observeAll()
 
