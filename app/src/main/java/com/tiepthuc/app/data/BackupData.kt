@@ -9,7 +9,7 @@ import org.json.JSONObject
  */
 object BackupData {
 
-    const val BACKUP_VERSION = 2
+    const val BACKUP_VERSION = 3
 
     fun toJson(
         tables: List<TableEntity>,
@@ -41,6 +41,7 @@ object BackupData {
             o.put("status", i.status)
             o.put("createdAt", i.createdAt)
             o.put("servedAt", i.servedAt ?: JSONObject.NULL)
+            o.put("archived", i.archived)
             itemsArray.put(o)
         }
         root.put("items", itemsArray)
@@ -94,7 +95,8 @@ object BackupData {
                     note = if (o.isNull("note")) null else o.getString("note"),
                     status = o.getString("status"),
                     createdAt = o.getLong("createdAt"),
-                    servedAt = if (o.isNull("servedAt")) null else o.getLong("servedAt")
+                    servedAt = if (o.isNull("servedAt")) null else o.getLong("servedAt"),
+                    archived = o.optBoolean("archived", false)
                 )
             )
         }
