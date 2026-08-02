@@ -31,6 +31,9 @@ fun TableDetailScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var editTarget by remember { mutableStateOf<OrderItemEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<OrderItemEntity?>(null) }
+    var showEndTableConfirm by remember { mutableStateOf(false) }
+
+    val pendingCount = items.count { it.status == ItemStatus.PENDING }
 
     Scaffold(
         topBar = {
@@ -39,6 +42,13 @@ fun TableDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Quay lại")
+                    }
+                },
+                actions = {
+                    if (items.isNotEmpty()) {
+                        IconButton(onClick = { showEndTableConfirm = true }) {
+                            Icon(Icons.Filled.EventAvailable, contentDescription = "Kết thúc bàn")
+                        }
                     }
                 }
             )
@@ -119,6 +129,31 @@ fun TableDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { deleteTarget = null }) { Text("Huỷ") }
+            }
+        )
+    }
+
+    if (showEndTableConfirm) {
+        AlertDialog(
+            onDismissRequest = { showEndTableConfirm = false },
+            title = { Text("Kết thúc bàn?") },
+            text = {
+                Text(
+                    if (pendingCount > 0) {
+                        "Bàn này còn $pendingCount món chưa mang ra. Kết thúc bàn sẽ xoá các món chưa phục vụ này (không lưu vào lịch sử). Các món đã mang ra vẫn được giữ nguyên trong Lịch sử. Bàn sẽ trở về trạng thái Trống."
+                    } else {
+                        "Toàn bộ món đã mang ra của bàn này vẫn được giữ trong Lịch sử. Bàn sẽ trở về trạng thái Trống, sẵn sàng cho khách mới."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEndTableConfirm = false
+                    viewModel.endTable { onBack() }
+                }) { Text("Kết thúc bàn") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndTableConfirm = false }) { Text("Huỷ") }
             }
         )
     }
